@@ -1,276 +1,287 @@
-# Quick Commerce - Microservices E-commerce Platform
+# QuickMart - Microservices E-commerce Platform
 
-Quick Commerce is a modern e-commerce platform built using microservices architecture. It provides a scalable and maintainable solution for online shopping with features like user management, product catalog, order processing, and payment handling.
+QuickMart is a robust, scalable e-commerce platform built using a microservices architecture. This project demonstrates modern application design principles with features like service discovery, API gateway, containerization, and Kubernetes orchestration.
 
-## Architecture
+## Architecture Diagram
 
-The application is built using the following microservices:
+```mermaid
+graph TD
+    Client([Client]) --> ApiGateway[API Gateway<br>Port: 8080]
+    
+    ApiGateway --> EurekaServer[Eureka Server<br>Port: 8761]
+    ApiGateway --> AuthService[Auth Service<br>Port: 8081]
+    ApiGateway --> UserService[User Service<br>Port: 8082]
+    ApiGateway --> ProductService[Product Service<br>Port: 8083]
+    ApiGateway --> InventoryService[Inventory Service<br>Port: 8084]
+    ApiGateway --> PaymentService[Payment Service<br>Port: 8085]
+    ApiGateway --> OrderService[Order Service<br>Port: 8086]
+    
+    AuthService --> EurekaServer
+    UserService --> EurekaServer
+    ProductService --> EurekaServer
+    InventoryService --> EurekaServer
+    PaymentService --> EurekaServer
+    OrderService --> EurekaServer
+    
+    OrderService --> InventoryService
+    OrderService --> ProductService
+    OrderService --> PaymentService
+    
+    AuthService --> Database[(Database)]
+    UserService --> Database
+    ProductService --> Database
+    InventoryService --> Database
+    PaymentService --> Database
+    OrderService --> Database
+    
+    subgraph Core Services
+        EurekaServer
+        ApiGateway
+        AuthService
+    end
+    
+    subgraph Domain Services
+        UserService
+        ProductService
+        InventoryService
+        OrderService
+        PaymentService
+    end
+```
+
+## Microservices Overview
 
 1. **API Gateway** (Port: 8080)
-   - Routes requests to appropriate microservices
+   - Entry point for all client requests
+   - Routes traffic to appropriate microservices
    - Handles authentication and authorization
-   - Provides Swagger API documentation
-   - Swagger UI: http://localhost:8080/swagger-ui.html
+   - Provides Swagger UI at http://localhost:8080/swagger-ui.html
 
 2. **Eureka Server** (Port: 8761)
    - Service discovery and registration
    - Load balancing
-   - Dashboard: http://localhost:8761
+   - Health monitoring
+   - Dashboard available at http://localhost:8761
 
-3. **Login Service** (Port: 8081)
+3. **Auth Service** (Port: 8081)
    - User authentication and authorization
+   - JWT token generation and validation
    - Role-based access control (USER/ADMIN)
    - Swagger UI: http://localhost:8081/swagger-ui.html
 
-4. **Product Service** (Port: 8081)
+4. **User Service** (Port: 8082)
+   - User profile management
+   - User registration and updates
+   - User preferences
+   - Swagger UI: http://localhost:8082/swagger-ui.html
+
+5. **Product Service** (Port: 8083)
    - Product catalog management
    - Product search and filtering
-   - Swagger UI: http://localhost:8081/swagger-ui.html
-
-5. **Inventory Service** (Port: 8083)
-   - Stock management
-   - Inventory tracking
+   - Category management
    - Swagger UI: http://localhost:8083/swagger-ui.html
 
-6. **Order Service** (Port: 8084)
-   - Order processing
-   - Order tracking
+6. **Inventory Service** (Port: 8084)
+   - Stock management
+   - Inventory tracking
+   - Restock notifications
    - Swagger UI: http://localhost:8084/swagger-ui.html
 
 7. **Payment Service** (Port: 8085)
    - Payment processing
+   - Multiple payment methods
    - Transaction management
    - Swagger UI: http://localhost:8085/swagger-ui.html
 
-## Prerequisites
+8. **Order Service** (Port: 8086)
+   - Order processing and management
+   - Order status tracking
+   - Integration with inventory and payment
+   - Swagger UI: http://localhost:8086/swagger-ui.html
 
-- Java 17 or higher
-- Maven 3.6 or higher
-- MySQL 8.0 or higher
-- Spring Boot 3.x
-- Spring Cloud 2023.x
+## Technical Stack
+
+- **Framework**: Spring Boot 3.x, Spring Cloud 2023.x
+- **Database**: MySQL 8.0
+- **Service Discovery**: Netflix Eureka
+- **API Gateway**: Spring Cloud Gateway
+- **Documentation**: SpringDoc OpenAPI (Swagger)
+- **Authentication**: JWT (JSON Web Tokens)
+- **Container**: Docker
+- **Orchestration**: Kubernetes
+- **Build Tool**: Maven
+
+## Database Schema
+
+The application uses a relational database with the following main entities:
+
+```mermaid
+erDiagram
+    User ||--o{ Order : places
+    User {
+        int id PK
+        string username
+        string password
+        string role
+        string email
+        datetime created_at
+        datetime updated_at
+    }
+
+    Product ||--o{ OrderItem : contains
+    Product ||--o{ Inventory : tracks
+    Product {
+        int id PK
+        string name
+        string description
+        decimal price
+        string category
+        int stock_quantity
+        datetime created_at
+        datetime updated_at
+    }
+
+    Order ||--|{ OrderItem : contains
+    Order ||--o{ Payment : has
+    Order {
+        int id PK
+        int user_id FK
+        decimal total_amount
+        string status
+        datetime order_date
+        datetime updated_at
+    }
+
+    OrderItem {
+        int id PK
+        int order_id FK
+        int product_id FK
+        int quantity
+        decimal unit_price
+    }
+
+    Inventory {
+        int id PK
+        int product_id FK
+        int quantity
+        datetime last_updated
+    }
+
+    Payment {
+        int id PK
+        int order_id FK
+        decimal amount
+        string payment_method
+        string status
+        datetime payment_date
+    }
+```
 
 ## Setup Instructions
 
+### Prerequisites
+- JDK 17+
+- Maven 3.6+
+- Docker and Docker Compose
+- Kubernetes (optional, for K8s deployment)
+
+### Local Development Setup
+
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/QuickCommerce.git
-   cd QuickCommerce
+   git clone https://github.com/yourusername/quickmart-backend.git
+   cd quickmart-backend
    ```
 
-2. **Configure Database**
-   - Create MySQL databases for each service:
-     ```sql
-     CREATE DATABASE login;
-     CREATE DATABASE product_service;
-     CREATE DATABASE quick_commerce;
-     ```
-   - Update application.properties files with your database credentials
-
-3. **Build the project**
+2. **Run with Docker Compose**
    ```bash
-   mvn clean install
+   docker-compose up -d
+   ```
+   This will start all services and a MySQL database.
+
+3. **Build all services (alternative)**
+   ```bash
+   ./build-all.bat  # For Windows
+   # OR
+   ./build-all.sh   # For Linux/Mac
    ```
 
-4. **Start the services**
+4. **Start individual services (alternative)**
    ```bash
-   # Start Eureka Server first
+   # Start in this order:
    cd Eureka-Server
-   mvn spring:boot run
+   mvn spring-boot:run
 
-   # Start other services in separate terminals
-   cd API-Gateway
-   mvn spring:boot run
+   cd ../API-Gateway
+   mvn spring-boot:run
 
-   cd LogIn
-   mvn spring:boot run
+   # Start other services similarly
+   ```
 
-   cd Product-Service
-   mvn spring:boot run
+### Kubernetes Deployment
 
-   cd Inventory-Service
-   mvn spring:boot run
+1. **Build Docker images**
+   ```bash
+   docker-compose build
+   ```
 
-   cd Order-Service
-   mvn spring:boot run
+2. **Apply Kubernetes configurations**
+   ```bash
+   kubectl apply -f k8s/
+   ```
 
-   cd Payment-Service
-   mvn spring:boot run
+3. **Access services**
+   ```bash
+   # Forward API Gateway port
+   kubectl port-forward svc/api-gateway 8080:8080
    ```
 
 ## API Documentation
 
-### Swagger UI Access
-Each service has its own Swagger UI for detailed API documentation:
+Each service provides its own Swagger UI for API documentation:
 
 1. **API Gateway**: http://localhost:8080/swagger-ui.html
-2. **Login Service**: http://localhost:8081/swagger-ui.html
-3. **Product Service**: http://localhost:8081/swagger-ui.html
-4. **Inventory Service**: http://localhost:8083/swagger-ui.html
-5. **Order Service**: http://localhost:8084/swagger-ui.html
+2. **Auth Service**: http://localhost:8081/swagger-ui.html
+3. **User Service**: http://localhost:8082/swagger-ui.html
+4. **Product Service**: http://localhost:8083/swagger-ui.html
+5. **Inventory Service**: http://localhost:8084/swagger-ui.html
 6. **Payment Service**: http://localhost:8085/swagger-ui.html
-
-### API Endpoints Documentation
-
-#### Authentication Service
-```
-POST /api/auth/register
-- Register a new user
-- Body: {
-    "username": "string",
-    "password": "string",
-    "role": "USER/ADMIN"
-  }
-
-POST /api/auth/login
-- Login user
-- Body: {
-    "username": "string",
-    "password": "string"
-  }
-```
-
-#### Product Service
-```
-GET /api/products
-- Get all products
-- Query Parameters:
-  - page (optional)
-  - size (optional)
-  - sort (optional)
-
-POST /api/products
-- Create new product (Admin only)
-- Body: {
-    "name": "string",
-    "description": "string",
-    "price": number,
-    "category": "string",
-    "imageUrl": "string"
-  }
-
-GET /api/products/{id}
-- Get product by ID
-
-PUT /api/products/{id}
-- Update product (Admin only)
-- Body: Same as POST
-
-DELETE /api/products/{id}
-- Delete product (Admin only)
-```
-
-#### Order Service
-```
-POST /api/orders
-- Create new order
-- Body: {
-    "userId": number,
-    "items": [
-      {
-        "productId": number,
-        "quantity": number
-      }
-    ]
-  }
-
-GET /api/orders/{id}
-- Get order by ID
-
-GET /api/orders/user/{userId}
-- Get orders by user ID
-```
-
-#### Payment Service
-```
-POST /api/payments/process
-- Process payment
-- Body: {
-    "orderId": number,
-    "userId": number,
-    "amount": number,
-    "paymentMethod": "string"
-  }
-
-GET /api/payments/{paymentId}
-- Get payment by ID
-```
-
-#### Inventory Service
-```
-GET /api/inventory/check
-- Check product availability
-- Query Parameters: productIds (comma-separated)
-
-PUT /api/inventory/{productId}
-- Update inventory
-- Query Parameters: quantityChange
-```
-
-## Authentication
-
-The application uses JWT-based authentication with role-based access control:
-
-### User Roles
-1. **ADMIN**
-   - Full access to all endpoints
-   - Can manage products, inventory, and users
-   - Can view all orders and payments
-
-2. **USER**
-   - Access to user-specific endpoints
-   - Can place orders and make payments
-   - Can view their own orders and profile
-
-### Authentication Flow
-1. Register a new user
-2. Login to get JWT token
-3. Include token in Authorization header:
-   ```
-   Authorization: Bearer <your-token>
-   ```
+7. **Order Service**: http://localhost:8086/swagger-ui.html
 
 ## Security
 
-- JWT-based authentication
-- Role-based access control
-- Password encryption using BCrypt
-- CORS enabled
-- CSRF protection
-- Rate limiting
-- Input validation
+- **Authentication**: JWT-based token authentication
+- **Authorization**: Role-based access control (USER/ADMIN)
+- **API Security**: HTTPS, CORS configuration, CSRF protection
+- **Password Security**: BCrypt password encoding
 
-## Development
+## Communication Patterns
 
-### Adding New Features
-1. Create a new branch
-2. Implement the feature
-3. Add unit tests
-4. Update API documentation
-5. Create pull request
+- **Synchronous**: REST API calls between services
+- **Service Discovery**: All services register with Eureka
+- **API Gateway**: Central entry point for all client requests
+- **Circuit Breaking**: Resilience4j for fault tolerance
 
-### Testing
-```bash
-# Run all tests
-mvn test
+## Deployment Options
 
-# Run specific service tests
-cd <service-name>
-mvn test
-```
+1. **Docker**: Use `docker-compose.yml` for local deployment
+2. **Kubernetes**: Use configurations in `k8s/` directory
+3. **Standalone**: Run each service individually with Maven
+
+## Monitoring and Observability
+
+- Eureka Dashboard: http://localhost:8761
+- Actuator endpoints for each service
+- Health metrics at `/actuator/health`
+- Custom metrics for business operations
 
 ## Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+2. Create a feature branch
+3. Implement changes with tests
+4. Submit a pull request
 
 ## License
 
-This project is licensed under the Apache License 2.0 - see the LICENSE file for details.
-
-## Support
-
-For support, email support@quickcommerce.com or create an issue in the repository.
+This project is licensed under the MIT License
