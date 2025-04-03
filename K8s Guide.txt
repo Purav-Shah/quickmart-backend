@@ -1,0 +1,27 @@
+docker-compose up -d
+
+
+kind create cluster --name quick-commerce
+
+
+kind load docker-image kind/backend-eureka-server:latest --name quick-commerce
+kind load docker-image kind/backend-api-gateway:latest --name quick-commerce
+kind load docker-image kind/backend-auth-service:latest --name quick-commerce
+kind load docker-image kind/backend-user-service:latest --name quick-commerce
+kind load docker-image kind/backend-product-service:latest --name quick-commerce
+kind load docker-image kind/backend-inventory-service:latest --name quick-commerce
+kind load docker-image kind/backend-payment-service:latest --name quick-commerce
+kind load docker-image kind/backend-order-service:latest --name quick-commerce
+
+kubectl apply -f k8s/mysql-deployment.yaml --validate=false
+kubectl apply -f k8s/eureka-deployment.yaml --validate=false
+kubectl apply -f k8s/api-gateway-deployment.yaml --validate=false
+kubectl apply -f k8s/auth-service-deployment.yaml --validate=false
+kubectl apply -f k8s/user-service-deployment.yaml --validate=false
+kubectl apply -f k8s/product-service-deployment.yaml --validate=false
+kubectl apply -f k8s/inventory-service-deployment.yaml --validate=false
+kubectl apply -f k8s/payment-service-deployment.yaml --validate=false
+kubectl apply -f k8s/order-service-deployment.yaml --validate=false
+
+kubectl get pods
+kubectl get services
