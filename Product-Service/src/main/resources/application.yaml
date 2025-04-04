@@ -21,15 +21,6 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.MySQL8Dialect
-  doc:
-    swagger-ui:
-      path: /swagger-ui.html
-      operations-sorter: method
-      tags-sorter: alpha
-      try-it-out-enabled: true
-      filter: true
-    api-docs:
-      path: /v3/api-docs
 
 eureka:
   client:
@@ -40,6 +31,13 @@ eureka:
 
 server:
   port: 8082
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
 
 logging:
   level:
