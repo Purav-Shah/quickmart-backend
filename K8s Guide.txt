@@ -3,6 +3,14 @@ docker-compose up -d
 
 kind create cluster --name quick-commerce
 
+docker tag quickmart-backend-eureka-server:latest kind/backend-eureka-server:latest
+docker tag quickmart-backend-api-gateway:latest kind/backend-api-gateway:latest
+docker tag quickmart-backend-auth-service:latest kind/backend-auth-service:latest
+docker tag quickmart-backend-user-service:latest kind/backend-user-service:latest
+docker tag quickmart-backend-product-service:latest kind/backend-product-service:latest
+docker tag quickmart-backend-inventory-service:latest kind/backend-inventory-service:latest
+docker tag quickmart-backend-payment-service:latest kind/backend-payment-service:latest
+docker tag quickmart-backend-order-service:latest kind/backend-order-service:latest
 
 kind load docker-image kind/backend-eureka-server:latest --name quick-commerce
 kind load docker-image kind/backend-api-gateway:latest --name quick-commerce
@@ -25,3 +33,7 @@ kubectl apply -f k8s/order-service-deployment.yaml --validate=false
 
 kubectl get pods
 kubectl get services
+
+
+kubectl delete all --all
+kind delete cluster --name quick-commerce

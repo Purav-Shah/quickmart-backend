@@ -13,96 +13,160 @@ services:
     volumes:
       - mysql-data:/var/lib/mysql
     networks:
-      - my-network
+      - quickmart-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   eureka-server:
     build: ./Eureka-Server
     container_name: eureka-server
     restart: always
     environment:
+      SPRING_APPLICATION_NAME: eureka-server
+      SERVER_PORT: 8761
       EUREKA_INSTANCE_HOSTNAME: eureka-server
-      EUREKA_CLIENT_REGISTERWITHEUEREKA: "false"
+      EUREKA_INSTANCE_PREFERIPADDRESS: "true"
       EUREKA_CLIENT_REGISTERWITHEUREKA: "false"
       EUREKA_CLIENT_FETCHREGISTRY: "false"
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_SERVER_ENABLESELFPRESERVATION: "true"
     ports:
       - "8761:8761"
     networks:
-      - my-network
-
-  api-gateway:
-    build: ./API-Gateway
-    container_name: api-gateway
-    restart: always
-    depends_on:
-      - mysql-db
-      - eureka-server
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/quick_commerce
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
-      EUREKA_INSTANCE_PREFERIPADDRESS: "true"
-      EUREKA_INSTANCE_HOSTNAME: api-gateway
-      SPRING_CLOUD_GATEWAY_ROUTES[0]_ID: auth-service
-      SPRING_CLOUD_GATEWAY_ROUTES[0]_URI: http://auth-service:8081
-      SPRING_CLOUD_GATEWAY_ROUTES[0]_PREDICATES[0]: Path=/auth-service/api/**
-      SPRING_CLOUD_GATEWAY_ROUTES[0]_FILTERS[0]: StripPrefix=1
-    ports:
-      - "8080:8080"
-    networks:
-      - my-network
-
-  auth-service:
-    build: ./Auth-Service
-    container_name: auth-service
-    restart: always
-    depends_on:
-      - mysql-db
-      - eureka-server
-      - user-service
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/quick_commerce
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
-      EUREKA_INSTANCE_PREFERIPADDRESS: "true"
-      EUREKA_INSTANCE_HOSTNAME: auth-service
-      USER-SERVICE_RIBBON_LISTOFSERVERS: user-service:8086
-      FEIGN_CLIENT_CONFIG_DEFAULT_URL: http://user-service:8086
-    ports:
-      - "8081:8081"
-    networks:
-      - my-network
+      - quickmart-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8761/eureka/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
   user-service:
     build: ./User-Service
     container_name: user-service
     restart: always
     depends_on:
-      - mysql-db
-      - eureka-server
+      mysql-db:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
     environment:
+      SPRING_APPLICATION_NAME: USER-SERVICE
+      SERVER_PORT: 8086
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/quick_commerce
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       EUREKA_INSTANCE_PREFERIPADDRESS: "true"
       EUREKA_INSTANCE_HOSTNAME: user-service
-      SPRING_APPLICATION_NAME: USER-SERVICE
+      SPRING_JPA_HIBERNATE_DDL-AUTO: update
     ports:
       - "8086:8086"
     networks:
-      - my-network
+      - quickmart-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8086/actuator/health || exit 0"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+
+  auth-service:
+    build: ./Auth-Service
+    container_name: auth-service
+    restart: always
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+      user-service:
+        condition: service_started
+    environment:
+      SPRING_APPLICATION_NAME: AUTH-SERVICE
+      SERVER_PORT: 8081
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/quick_commerce
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFERIPADDRESS: "true"
+      EUREKA_INSTANCE_HOSTNAME: auth-service
+      # Configure Feign client directly
+      USER_SERVICE_URL: http://user-service:8086
+      SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_USER-SERVICE_URL: http://user-service:8086
+    ports:
+      - "8081:8081"
+    networks:
+      - quickmart-network
+
+  api-gateway:
+    build: ./API-Gateway
+    container_name: api-gateway
+    restart: always
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    environment:
+      SPRING_APPLICATION_NAME: API-GATEWAY
+      SERVER_PORT: 8080
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/quick_commerce
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFERIPADDRESS: "true"
+      EUREKA_INSTANCE_HOSTNAME: api-gateway
+      # Define explicit routes for services
+      SPRING_CLOUD_GATEWAY_ROUTES[0]_ID: auth-service
+      SPRING_CLOUD_GATEWAY_ROUTES[0]_URI: http://auth-service:8081
+      SPRING_CLOUD_GATEWAY_ROUTES[0]_PREDICATES[0]: Path=/auth-service/api/**
+      SPRING_CLOUD_GATEWAY_ROUTES[0]_FILTERS[0]: StripPrefix=1
+      SPRING_CLOUD_GATEWAY_ROUTES[1]_ID: user-service
+      SPRING_CLOUD_GATEWAY_ROUTES[1]_URI: http://user-service:8086
+      SPRING_CLOUD_GATEWAY_ROUTES[1]_PREDICATES[0]: Path=/api/user/**, /api/users/**
+      SPRING_CLOUD_GATEWAY_ROUTES[1]_FILTERS[0]: StripPrefix=0
+      SPRING_CLOUD_GATEWAY_ROUTES[2]_ID: product-service
+      SPRING_CLOUD_GATEWAY_ROUTES[2]_URI: http://product-service:8082
+      SPRING_CLOUD_GATEWAY_ROUTES[2]_PREDICATES[0]: Path=/api/products/**
+      SPRING_CLOUD_GATEWAY_ROUTES[2]_FILTERS[0]: StripPrefix=0
+      SPRING_CLOUD_GATEWAY_ROUTES[3]_ID: inventory-service
+      SPRING_CLOUD_GATEWAY_ROUTES[3]_URI: http://inventory-service:8083
+      SPRING_CLOUD_GATEWAY_ROUTES[3]_PREDICATES[0]: Path=/api/inventory/**
+      SPRING_CLOUD_GATEWAY_ROUTES[3]_FILTERS[0]: StripPrefix=0
+      SPRING_CLOUD_GATEWAY_ROUTES[4]_ID: order-service
+      SPRING_CLOUD_GATEWAY_ROUTES[4]_URI: http://order-service:8084
+      SPRING_CLOUD_GATEWAY_ROUTES[4]_PREDICATES[0]: Path=/api/orders/**
+      SPRING_CLOUD_GATEWAY_ROUTES[4]_FILTERS[0]: StripPrefix=0
+      SPRING_CLOUD_GATEWAY_ROUTES[5]_ID: payment-service
+      SPRING_CLOUD_GATEWAY_ROUTES[5]_URI: http://payment-service:8085
+      SPRING_CLOUD_GATEWAY_ROUTES[5]_PREDICATES[0]: Path=/api/payments/**
+      SPRING_CLOUD_GATEWAY_ROUTES[5]_FILTERS[0]: StripPrefix=0
+    ports:
+      - "8080:8080"
+    networks:
+      - quickmart-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health || exit 0"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
 
   product-service:
     build: ./Product-Service
     container_name: product-service
     restart: always
     depends_on:
-      - mysql-db
-      - eureka-server
+      mysql-db:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
     environment:
+      SPRING_APPLICATION_NAME: PRODUCT-SERVICE
+      SERVER_PORT: 8082
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/quick_commerce
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
@@ -112,16 +176,20 @@ services:
     ports:
       - "8082:8082"
     networks:
-      - my-network
+      - quickmart-network
 
   inventory-service:
     build: ./Inventory-Service
     container_name: inventory-service
     restart: always
     depends_on:
-      - mysql-db
-      - eureka-server
+      mysql-db:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
     environment:
+      SPRING_APPLICATION_NAME: INVENTORY-SERVICE
+      SERVER_PORT: 8083
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/quick_commerce
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
@@ -131,16 +199,20 @@ services:
     ports:
       - "8083:8083"
     networks:
-      - my-network
+      - quickmart-network
 
   payment-service:
     build: ./Payment-Service
     container_name: payment-service
     restart: always
     depends_on:
-      - mysql-db
-      - eureka-server
+      mysql-db:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
     environment:
+      SPRING_APPLICATION_NAME: PAYMENT-SERVICE
+      SERVER_PORT: 8085
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/quick_commerce
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
@@ -150,16 +222,20 @@ services:
     ports:
       - "8085:8085"
     networks:
-      - my-network
+      - quickmart-network
 
   order-service:
     build: ./Order-Service
     container_name: order-service
     restart: always
     depends_on:
-      - mysql-db
-      - eureka-server
+      mysql-db:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
     environment:
+      SPRING_APPLICATION_NAME: ORDER-SERVICE
+      SERVER_PORT: 8084
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/quick_commerce
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
@@ -169,10 +245,10 @@ services:
     ports:
       - "8084:8084"
     networks:
-      - my-network
+      - quickmart-network
 
 networks:
-  my-network:
+  quickmart-network:
     driver: bridge
 
 volumes:
