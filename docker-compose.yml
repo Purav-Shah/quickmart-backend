@@ -19,6 +19,12 @@ services:
     build: ./Eureka-Server
     container_name: eureka-server
     restart: always
+    environment:
+      EUREKA_INSTANCE_HOSTNAME: eureka-server
+      EUREKA_CLIENT_REGISTERWITHEUEREKA: "false"
+      EUREKA_CLIENT_REGISTERWITHEUREKA: "false"
+      EUREKA_CLIENT_FETCHREGISTRY: "false"
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
     ports:
       - "8761:8761"
     networks:
@@ -36,6 +42,12 @@ services:
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFERIPADDRESS: "true"
+      EUREKA_INSTANCE_HOSTNAME: api-gateway
+      SPRING_CLOUD_GATEWAY_ROUTES[0]_ID: auth-service
+      SPRING_CLOUD_GATEWAY_ROUTES[0]_URI: http://auth-service:8081
+      SPRING_CLOUD_GATEWAY_ROUTES[0]_PREDICATES[0]: Path=/auth-service/api/**
+      SPRING_CLOUD_GATEWAY_ROUTES[0]_FILTERS[0]: StripPrefix=1
     ports:
       - "8080:8080"
     networks:
@@ -48,11 +60,16 @@ services:
     depends_on:
       - mysql-db
       - eureka-server
+      - user-service
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/quick_commerce
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFERIPADDRESS: "true"
+      EUREKA_INSTANCE_HOSTNAME: auth-service
+      USER-SERVICE_RIBBON_LISTOFSERVERS: user-service:8086
+      FEIGN_CLIENT_CONFIG_DEFAULT_URL: http://user-service:8086
     ports:
       - "8081:8081"
     networks:
@@ -70,8 +87,11 @@ services:
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFERIPADDRESS: "true"
+      EUREKA_INSTANCE_HOSTNAME: user-service
+      SPRING_APPLICATION_NAME: USER-SERVICE
     ports:
-      - "8082:8082"
+      - "8086:8086"
     networks:
       - my-network
 
@@ -87,8 +107,10 @@ services:
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFERIPADDRESS: "true"
+      EUREKA_INSTANCE_HOSTNAME: product-service
     ports:
-      - "8083:8083"
+      - "8082:8082"
     networks:
       - my-network
 
@@ -104,8 +126,10 @@ services:
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFERIPADDRESS: "true"
+      EUREKA_INSTANCE_HOSTNAME: inventory-service
     ports:
-      - "8084:8084"
+      - "8083:8083"
     networks:
       - my-network
 
@@ -121,6 +145,8 @@ services:
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFERIPADDRESS: "true"
+      EUREKA_INSTANCE_HOSTNAME: payment-service
     ports:
       - "8085:8085"
     networks:
@@ -138,8 +164,10 @@ services:
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFERIPADDRESS: "true"
+      EUREKA_INSTANCE_HOSTNAME: order-service
     ports:
-      - "8086:8086"
+      - "8084:8084"
     networks:
       - my-network
 

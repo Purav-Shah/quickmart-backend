@@ -55,6 +55,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth ->
                         auth.requestMatchers("/api/register").permitAll()
                             .requestMatchers("/api/login").permitAll()
+                            .requestMatchers("/actuator/**").permitAll()
                             .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
