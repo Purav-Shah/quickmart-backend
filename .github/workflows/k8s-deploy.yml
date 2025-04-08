@@ -1,0 +1,44 @@
+name: Deploy to Kubernetes
+
+on:
+  workflow_run:
+    workflows: ["Quickmart Backend CI/CD"]
+    types:
+      - completed
+    branches: [main, master]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Install kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'latest'
+      
+    - name: Set Kubernetes Context
+      uses: azure/k8s-set-context@v3
+      with:
+        kubeconfig: ${{ secrets.KUBE_CONFIG }}
+        
+    - name: Deploy to Kubernetes
+      run: |
+        # Apply Kubernetes manifests
+        kubectl apply -f k8s/
+
+    - name: Verify deployment
+      run: |
+        # Wait for deployments to be ready
+        kubectl rollout status deployment/auth-service -n quickmart
+        kubectl rollout status deployment/eureka-server -n quickmart
+        kubectl rollout status deployment/api-gateway -n quickmart
+        kubectl rollout status deployment/inventory-service -n quickmart
+        kubectl rollout status deployment/order-service -n quickmart
+        kubectl rollout status deployment/payment-service -n quickmart
+        kubectl rollout status deployment/product-service -n quickmart
+        kubectl rollout status deployment/user-service -n quickmart 
