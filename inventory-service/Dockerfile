@@ -5,7 +5,7 @@ FROM openjdk:23-jdk-slim
 WORKDIR /app
 
 # Copy JAR file to container
-COPY target/Inventory-Service-0.0.1-SNAPSHOT.jar /app/inventory-service.jar
+COPY target/inventory-service-0.0.1-SNAPSHOT.jar /app/inventory-service.jar
 
 # Expose port 8084
 EXPOSE 8083

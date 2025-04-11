@@ -5,7 +5,7 @@ FROM openjdk:23-jdk-slim
 WORKDIR /app
 
 # Copy JAR file to container
-COPY target/Payment-Service-0.0.1-SNAPSHOT.jar /app/payment-service.jar
+COPY target/payment-service-0.0.1-SNAPSHOT.jar /app/payment-service.jar
 
 # Expose port 8085
 EXPOSE 8085

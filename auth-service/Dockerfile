@@ -5,7 +5,7 @@ FROM openjdk:23-jdk-slim
 WORKDIR /app
 
 # Copy JAR file to container
-COPY target/Auth-Service-0.0.1-SNAPSHOT.jar /app/auth-service.jar
+COPY target/auth-service-0.0.1-SNAPSHOT.jar /app/auth-service.jar
 
 # Expose port 8081
 EXPOSE 8081

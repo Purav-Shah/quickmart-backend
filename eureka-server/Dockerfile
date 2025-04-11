@@ -5,7 +5,7 @@ FROM openjdk:23-jdk-slim
 WORKDIR /app
 
 # Copy JAR file to container
-COPY target/Eureka-Server-0.0.1-SNAPSHOT.jar /app/eureka-server.jar
+COPY target/eureka-server-0.0.1-SNAPSHOT.jar /app/eureka-server.jar
 
 # Expose port 8761
 EXPOSE 8761

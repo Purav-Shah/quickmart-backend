@@ -5,7 +5,7 @@ FROM openjdk:23-jdk-slim
 WORKDIR /app
 
 # Copy JAR file to container
-COPY target/Order-Service-0.0.1-SNAPSHOT.jar /app/order-service.jar
+COPY target/order-service-0.0.1-SNAPSHOT.jar /app/order-service.jar
 
 # Expose port 8086
 EXPOSE 8084
