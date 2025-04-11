@@ -16,8 +16,6 @@ jobs:
         service: [Eureka-Server, Auth-Service, Inventory-Service, Product-Service, User-Service, Payment-Service, Order-Service, Api-Gateway]
 
     steps:
-      - name: Grant execute permissions to mvnw
-        run: chmod +x ${{ matrix.service }}/mvnw
         
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -31,7 +29,7 @@ jobs:
 
       - name: Build and Test ${{ matrix.service }}
         working-directory: ${{ matrix.service }}
-        run: ./mvnw clean install -DskipTests
+        run: mvnw clean install -DskipTests
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
