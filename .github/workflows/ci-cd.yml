@@ -22,8 +22,14 @@ jobs:
         
     - name: Make Maven Wrapper Executable
       run: |
-        chmod +x */mvnw
-        chmod +x */*/mvnw
+        chmod +x Auth-Service/mvnw
+        chmod +x Eureka-Server/mvnw
+        chmod +x API-Gateway/mvnw
+        chmod +x Inventory-Service/mvnw
+        chmod +x Order-Service/mvnw
+        chmod +x Payment-Service/mvnw
+        chmod +x Product-Service/mvnw
+        chmod +x User-Service/mvnw
         
     - name: Build Auth Service
       run: cd Auth-Service && ./mvnw clean package -DskipTests
@@ -65,8 +71,14 @@ jobs:
         
     - name: Make Maven Wrapper Executable
       run: |
-        chmod +x */mvnw
-        chmod +x */*/mvnw
+        chmod +x Auth-Service/mvnw
+        chmod +x Eureka-Server/mvnw
+        chmod +x API-Gateway/mvnw
+        chmod +x Inventory-Service/mvnw
+        chmod +x Order-Service/mvnw
+        chmod +x Payment-Service/mvnw
+        chmod +x Product-Service/mvnw
+        chmod +x User-Service/mvnw
         
     - name: Test Auth Service
       run: cd Auth-Service && ./mvnw test
