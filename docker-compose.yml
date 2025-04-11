@@ -92,8 +92,8 @@ services:
       EUREKA_INSTANCE_PREFERIPADDRESS: "true"
       EUREKA_INSTANCE_HOSTNAME: auth-service
       # Configure Feign client directly
-      USER_SERVICE_URL: http://user-service:8086
-      SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_USER-SERVICE_URL: http://user-service:8086
+#      USER_SERVICE_URL: http://user-service:8086
+#      SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_USER-SERVICE_URL: http://user-service:8086
     ports:
       - "8081:8081"
     networks:
@@ -117,7 +117,7 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       EUREKA_INSTANCE_PREFERIPADDRESS: "true"
       EUREKA_INSTANCE_HOSTNAME: api-gateway
-      # Define explicit routes for services
+#       Define explicit routes for services
       SPRING_CLOUD_GATEWAY_ROUTES[0]_ID: auth-service
       SPRING_CLOUD_GATEWAY_ROUTES[0]_URI: http://auth-service:8081
       SPRING_CLOUD_GATEWAY_ROUTES[0]_PREDICATES[0]: Path=/auth-service/api/**
