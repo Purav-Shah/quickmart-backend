@@ -13,7 +13,7 @@ jobs:
 
     strategy:
       matrix:
-        service: [Eureka-Server, Auth-Service, Inventory-Service, Product-Service, User-Service, Payment-Service, Order-Service, Api-Gateway]
+        service: [Eureka-Server, Auth-Service, Inventory-Service, Product-Service, User-Service, Payment-Service, Order-Service, API-Gateway]
 
     steps:
         
