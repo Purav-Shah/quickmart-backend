@@ -51,7 +51,7 @@ services:
       eureka-server:
         condition: service_started
     environment:
-      SPRING_APPLICATION_NAME: USER-SERVICE
+      SPRING_APPLICATION_NAME: user-service
       SERVER_PORT: 8086
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/quick_commerce
       SPRING_DATASOURCE_USERNAME: root
@@ -59,6 +59,7 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       EUREKA_INSTANCE_PREFERIPADDRESS: "true"
       EUREKA_INSTANCE_HOSTNAME: user-service
+      EUREKA_INSTANCE_INSTANCEID: user-service:8086
       SPRING_JPA_HIBERNATE_DDL-AUTO: update
     ports:
       - "8086:8086"
@@ -83,7 +84,7 @@ services:
       user-service:
         condition: service_started
     environment:
-      SPRING_APPLICATION_NAME: AUTH-SERVICE
+      SPRING_APPLICATION_NAME: auth-service
       SERVER_PORT: 8081
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/quick_commerce
       SPRING_DATASOURCE_USERNAME: root
@@ -91,9 +92,15 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       EUREKA_INSTANCE_PREFERIPADDRESS: "true"
       EUREKA_INSTANCE_HOSTNAME: auth-service
+      EUREKA_INSTANCE_INSTANCEID: auth-service:8081
       # Configure Feign client directly
-#      USER_SERVICE_URL: http://user-service:8086
-#      SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_USER-SERVICE_URL: http://user-service:8086
+      USER_SERVICE_URL: http://user-service:8086
+      SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_USER-SERVICE_URL: http://user-service:8086
+      SPRING_CLOUD_LOADBALANCER_RETRY_ENABLED: "true"
+      SPRING_CLOUD_LOADBALANCER_RETRY_MAXATTEMPTS: "3"
+      SPRING_CLOUD_LOADBALANCER_RETRY_INITIALINTERVAL: "1000"
+      SPRING_CLOUD_LOADBALANCER_RETRY_MAXINTERVAL: "2000"
+      SPRING_CLOUD_LOADBALANCER_RETRY_ONALLOPERATIONS: "true"
     ports:
       - "8081:8081"
     networks:
@@ -109,7 +116,7 @@ services:
       eureka-server:
         condition: service_started
     environment:
-      SPRING_APPLICATION_NAME: API-GATEWAY
+      SPRING_APPLICATION_NAME: api-gateway
       SERVER_PORT: 8080
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/quick_commerce
       SPRING_DATASOURCE_USERNAME: root
@@ -117,14 +124,15 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       EUREKA_INSTANCE_PREFERIPADDRESS: "true"
       EUREKA_INSTANCE_HOSTNAME: api-gateway
-#       Define explicit routes for services
+      EUREKA_INSTANCE_INSTANCEID: api-gateway:8080
+      # Define explicit routes for services
       SPRING_CLOUD_GATEWAY_ROUTES[0]_ID: auth-service
       SPRING_CLOUD_GATEWAY_ROUTES[0]_URI: http://auth-service:8081
       SPRING_CLOUD_GATEWAY_ROUTES[0]_PREDICATES[0]: Path=/auth-service/api/**
       SPRING_CLOUD_GATEWAY_ROUTES[0]_FILTERS[0]: StripPrefix=1
       SPRING_CLOUD_GATEWAY_ROUTES[1]_ID: user-service
       SPRING_CLOUD_GATEWAY_ROUTES[1]_URI: http://user-service:8086
-      SPRING_CLOUD_GATEWAY_ROUTES[1]_PREDICATES[0]: Path=/api/user/**, /api/users/**
+      SPRING_CLOUD_GATEWAY_ROUTES[1]_PREDICATES[0]: Path=/api/user/**,/api/users/**
       SPRING_CLOUD_GATEWAY_ROUTES[1]_FILTERS[0]: StripPrefix=0
       SPRING_CLOUD_GATEWAY_ROUTES[2]_ID: product-service
       SPRING_CLOUD_GATEWAY_ROUTES[2]_URI: http://product-service:8082
