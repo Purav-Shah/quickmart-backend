@@ -19,7 +19,10 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         cache: maven
-        
+
+    - name: Grant execute permissions to mvnw
+      run: find . -name "mvnw" -exec chmod +x {} \;
+      
     - name: Build Auth Service
       run: cd Auth-Service && ./mvnw clean package -DskipTests
         
