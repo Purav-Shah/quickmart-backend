@@ -262,6 +262,73 @@ Each service provides its own Swagger UI for API documentation:
 - **API Gateway**: Central entry point for all client requests
 - **Circuit Breaking**: Resilience4j for fault tolerance
 
+## CI/CD Pipeline
+
+The project includes a GitHub Actions workflow for continuous integration and deployment:
+
+1. **Build and Test**
+   - Triggered on push to main branch and pull requests
+   - Builds all services using Maven
+   - Runs unit tests and integration tests
+   - Performs code quality checks with SonarQube
+
+2. **Docker Image Build**
+   - Builds Docker images for all services
+   - Pushes images to Docker Hub/Container Registry
+   - Tags images with commit SHA and 'latest'
+
+3. **Kubernetes Deployment**
+   - Deploys to development environment on successful build
+   - Deploys to production after manual approval
+   - Uses Helm charts for deployment configuration
+   - Implements blue-green deployment strategy
+
+4. **Monitoring and Rollback**
+   - Monitors deployment health
+   - Automatic rollback on failed deployments
+   - Slack notifications for build and deployment status
+
+## Circuit Breaker Implementation
+
+The system implements circuit breakers using Resilience4j for fault tolerance:
+
+1. **Configuration**
+   ```yaml
+   resilience4j:
+     circuitbreaker:
+       instances:
+         default:
+           failure-rate-threshold: 50
+           minimum-number-of-calls: 10
+           sliding-window-size: 100
+           sliding-window-type: COUNT_BASED
+           wait-duration-in-open-state: 5000
+   ```
+
+2. **Features**
+   - Automatic circuit breaker for all service-to-service calls
+   - Fallback methods for graceful degradation
+   - Monitoring through Actuator endpoints
+   - Configurable thresholds and timeouts
+
+3. **Usage Example**
+   ```java
+   @CircuitBreaker(name = "inventoryService", fallbackMethod = "getInventoryFallback")
+   public Inventory getInventory(Long productId) {
+       // Service call implementation
+   }
+
+   private Inventory getInventoryFallback(Long productId, Exception e) {
+       // Fallback implementation
+   }
+   ```
+
+4. **Monitoring**
+   - Circuit breaker states visible in Actuator endpoints
+   - Metrics exported to Prometheus
+   - Grafana dashboards for visualization
+   - Alerting on circuit breaker state changes
+
 ## Deployment Options
 
 1. **Docker**: Use `docker-compose.yml` for local deployment

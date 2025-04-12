@@ -17,6 +17,10 @@ spring:
             - Path=/auth-service/api/**
           filters:
             - StripPrefix=1
+            - name: CircuitBreaker
+              args:
+                name: myCircuitBreaker
+                fallbackUri: forward:/health/check
 
         - id: user-service
           uri: lb://user-service
@@ -24,6 +28,10 @@ spring:
             - Path=/api/user/**, /api/users/**
           filters:
             - StripPrefix=0
+            - name: CircuitBreaker
+              args:
+                name: myCircuitBreaker
+                fallbackUri: forward:/health/check
 
         - id: product-service
           uri: lb://product-service
@@ -31,6 +39,10 @@ spring:
             - Path=/api/products/**
           filters:
             - StripPrefix=0
+            - name: CircuitBreaker
+              args:
+                name: myCircuitBreaker
+                fallbackUri: forward:/health/check
 
         - id: inventory-service
           uri: lb://inventory-service
@@ -38,13 +50,20 @@ spring:
             - Path=/api/inventory/**
           filters:
             - StripPrefix=0
-
+            - name: CircuitBreaker
+              args:
+                name: myCircuitBreaker
+                fallbackUri: forward:/health/check
         - id: order-service
           uri: lb://order-service
           predicates:
             - Path=/api/orders/**
           filters:
             - StripPrefix=0
+            - name: CircuitBreaker
+              args:
+                name: myCircuitBreaker
+                fallbackUri: forward:/health/check
 
         - id: payment-service
           uri: lb://payment-service
@@ -52,6 +71,10 @@ spring:
             - Path=/api/payments/**
           filters:
             - StripPrefix=0
+            - name: CircuitBreaker
+              args:
+                name: myCircuitBreaker
+                fallbackUri: forward:/health/check
 
 server:
   port: 8080
@@ -62,6 +85,32 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     operationsSorter: method
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 5
+        failureRateThreshold: 50
+        slowCallRateThreshold: 100
+        slowCallDurationThreshold: 5s
+        waitDurationInOpenState: 2s
+        automatic-transition-from-open-to-half-open-enabled: true
+        registerHealthIndicator: true
+        eventConsumerBufferSize: 10
+        recordExceptions:
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+          - org.springframework.web.client.ResourceAccessException
+          - org.springframework.web.client.HttpServerErrorException
+        ignoreExceptions:
+          - org.springframework.web.client.HttpClientErrorException$NotFound
+          - org.springframework.web.client.HttpClientErrorException$MethodNotAllowed
+    instances:
+      myCircuitBreaker:
+        baseConfig: default
 
 eureka:
   client:
